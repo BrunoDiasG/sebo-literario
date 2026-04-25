@@ -1,0 +1,19 @@
+{
+  "name": "sebo-literario",
+  "version": "1.0.0",
+  "description": "Biblioteca digital com backend Convex",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "convex:dev": "convex dev"
+  },
+  "dependencies": {
+    "convex": "latest"
+  },
+  "devDependencies": {
+    "vite": "latest",
+    "@convex-dev/auth": "latest"
+  }
+}

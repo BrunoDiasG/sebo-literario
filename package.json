@@ -1,0 +1,18 @@
+{
+  "name": "sebo-literario",
+  "version": "1.0.0",
+  "description": "Sebo é uma biblioteca digital que permite aos usuários gerenciar suas coleções de livros, incluindo a adição de obras em formato PDF. O projeto oferece funcionalidades para autenticação de usuários, gerenciamento de livros e exibição de conteúdo em PDF.",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@convex-dev/auth": "^0.0.91",
+    "convex": "^1.36.0",
+    "next": "^16.2.4"
+  }
+}
