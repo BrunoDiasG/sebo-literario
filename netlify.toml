@@ -1,10 +1,14 @@
-# Netlify Build Configuration
+# Netlify Build Configuration para Site Estático HTML/CSS/JS
 
 [build]
-  # Comando a executar antes do deploy
-  command = "echo 'Build completed'"
-  # Diretório a publicar (site estático)
+  # Nenhum build necessário - site estático puro
+  command = ""
+  # Diretório a publicar
   publish = "."
+
+[build.environment]
+  # Desabilitar o plugin Next.js automático
+  NEXT_SKIP_EXPORT = "true"
 
 # Reescrever URLs para SPA (Single Page Application)
 [[redirects]]
