@@ -1,31 +1,38 @@
 // ========================================
-// SEBO - SISTEMA COMPLETO FUNCIONAL
+// SEBO LITERARIO - CONVEX BACKEND
 // ========================================
 
-// ========== ESTADO GLOBAL ==========
+// ESTADO GLOBAL
 let convex = null;
 let currentUser = null;
 
-// ========== INICIALIZAÇÃO CONVEX ==========
-function initConvex() {
-  // URL do Convex deve estar definida via variável de ambiente VITE_CONVEX_URL
-  const convexUrl = import.meta.env.VITE_CONVEX_URL || window.__CONVEX_URL__;
+// ========== INICIALIZAR CONVEX ==========
+async function initConvex() {
+  // Pegar URL injetada no HTML
+  const convexUrl = window.__CONVEX_URL__;
   
   if (!convexUrl) {
-    console.warn('⚠️ Convex URL não configurada. Configure VITE_CONVEX_URL nas variáveis de ambiente');
+    console.error('❌ CONVEX_URL não está configurada no HTML!');
     return;
   }
   
   if (typeof ConvexHttpClient !== 'undefined') {
     convex = new ConvexHttpClient(convexUrl);
-    console.log('✅ Convex inicializado com:', convexUrl);
+    console.log('✅ Convex inicializado:', convexUrl);
+    
+    // Carregar usuário da sessão se existir
+    const saved = sessionStorage.getItem('currentUser');
+    if (saved) {
+      currentUser = JSON.parse(saved);
+      console.log('✅ Usuário restaurado:', currentUser.name);
+    }
   } else {
-    console.warn('⚠️ ConvexHttpClient não disponível');
+    console.error('❌ ConvexHttpClient não disponível no window');
   }
 }
 
-// ========== AUTENTICAÇÃO ==========
-function registerUser() {
+// ========== AUTENTICAÇÃO COM CONVEX ==========
+async function registerUser() {
   const name = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
@@ -40,36 +47,38 @@ function registerUser() {
     return;
   }
   
-  // Salvar usuário em localStorage
-  const users = JSON.parse(localStorage.getItem('users') || '{}');
-  
-  if (users[email]) {
-    showAlert('Este email já está registrado', 'danger');
+  if (!convex) {
+    showAlert('❌ Convex não está inicializado', 'danger');
     return;
   }
   
-  users[email] = {
-    id: Date.now().toString(),
-    name,
-    email,
-    password: btoa(password), // Simples criptografia base64
-    createdAt: new Date().toISOString()
-  };
-  
-  localStorage.setItem('users', JSON.stringify(users));
-  localStorage.setItem('currentUser', email);
-  currentUser = users[email];
-  
-  showAlert('✅ Cadastro realizado com sucesso!', 'success');
-  document.getElementById('registerForm').reset();
-  
-  setTimeout(() => {
-    showScreen('home');
-    updateNavigation();
-  }, 1000);
+  try {
+    // Chamar função de registro no Convex backend
+    const user = await convex.mutation('users:registerUser', {
+      name,
+      email,
+      password
+    });
+    
+    if (user) {
+      currentUser = user;
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      showAlert('✅ Cadastro realizado com sucesso!', 'success');
+      document.getElementById('registerForm').reset();
+      
+      setTimeout(() => {
+        showScreen('home');
+        loadBooks();
+        updateNavigation();
+      }, 1000);
+    }
+  } catch (error) {
+    console.error('Erro ao registrar:', error);
+    showAlert('Erro: ' + (error.message || 'Falha ao registrar'), 'danger');
+  }
 }
 
-function loginUser() {
+async function loginUser() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   
@@ -78,30 +87,41 @@ function loginUser() {
     return;
   }
   
-  const users = JSON.parse(localStorage.getItem('users') || '{}');
-  const user = users[email];
-  
-  if (!user || user.password !== btoa(password)) {
-    showAlert('Email ou senha incorretos', 'danger');
+  if (!convex) {
+    showAlert('❌ Convex não está inicializado', 'danger');
     return;
   }
   
-  localStorage.setItem('currentUser', email);
-  currentUser = user;
-  
-  showAlert('✅ Login realizado com sucesso!', 'success');
-  document.getElementById('loginForm').reset();
-  
-  setTimeout(() => {
-    showScreen('home');
-    loadBooks();
-    updateNavigation();
-  }, 1000);
+  try {
+    // Chamar função de login no Convex backend
+    const user = await convex.mutation('users:loginUser', {
+      email,
+      password
+    });
+    
+    if (user) {
+      currentUser = user;
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      showAlert('✅ Login realizado com sucesso!', 'success');
+      document.getElementById('loginForm').reset();
+      
+      setTimeout(() => {
+        showScreen('home');
+        loadBooks();
+        updateNavigation();
+      }, 1000);
+    } else {
+      showAlert('Email ou senha incorretos', 'danger');
+    }
+  } catch (error) {
+    console.error('Erro ao fazer login:', error);
+    showAlert('Email ou senha incorretos', 'danger');
+  }
 }
 
 function logoutUser() {
   if (confirm('Tem certeza que deseja sair?')) {
-    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentUser');
     currentUser = null;
     showScreen('login');
     updateNavigation();
@@ -110,17 +130,16 @@ function logoutUser() {
 }
 
 function isLoggedIn() {
-  const email = localStorage.getItem('currentUser');
-  if (email) {
-    const users = JSON.parse(localStorage.getItem('users') || '{}');
-    currentUser = users[email];
+  const saved = sessionStorage.getItem('currentUser');
+  if (saved) {
+    currentUser = JSON.parse(saved);
     return !!currentUser;
   }
   return false;
 }
 
-// ========== GERENCIAMENTO DE LIVROS ==========
-function addBook() {
+// ========== GERENCIAMENTO DE LIVROS (CONVEX) ==========
+async function addBook() {
   if (!isLoggedIn()) {
     showAlert('Por favor, faça login primeiro', 'warning');
     return;
@@ -137,44 +156,56 @@ function addBook() {
     return;
   }
   
-  // Ler arquivo como base64
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const books = JSON.parse(localStorage.getItem('books') || '{}');
-    const userBooks = books[currentUser.email] || [];
-    
-    const newBook = {
-      id: Date.now().toString(),
-      title,
-      author,
-      genre,
-      description,
-      fileName: file.name,
-      fileData: e.target.result, // Base64
-      cover: '📖',
-      addedAt: new Date().toISOString()
+  if (!convex) {
+    showAlert('❌ Convex não está inicializado', 'danger');
+    return;
+  }
+  
+  try {
+    // Ler arquivo como base64
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        // Criar livro no Convex
+        const book = await convex.mutation('books:addBook', {
+          title,
+          author,
+          genre,
+          description,
+          fileName: file.name,
+          fileData: e.target.result // base64
+        });
+        
+        if (book) {
+          showAlert('✅ Livro adicionado com sucesso!', 'success');
+          document.getElementById('addBookForm').reset();
+          loadBooks();
+          showScreen('home');
+        }
+      } catch (error) {
+        console.error('Erro ao adicionar livro:', error);
+        showAlert('Erro: ' + error.message, 'danger');
+      }
     };
     
-    userBooks.push(newBook);
-    books[currentUser.email] = userBooks;
-    localStorage.setItem('books', JSON.stringify(books));
-    
-    showAlert('✅ Livro adicionado com sucesso!', 'success');
-    document.getElementById('addBookForm').reset();
-    loadBooks();
-    showScreen('home');
-  };
-  
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  } catch (error) {
+    console.error('Erro ao processar arquivo:', error);
+    showAlert('Erro ao processar arquivo', 'danger');
+  }
 }
 
-function loadBooks() {
-  if (!isLoggedIn()) return;
+async function loadBooks() {
+  if (!isLoggedIn() || !convex) return;
   
-  const books = JSON.parse(localStorage.getItem('books') || '{}');
-  const userBooks = books[currentUser.email] || [];
-  
-  displayBooks(userBooks);
+  try {
+    // Buscar livros do usuário no Convex
+    const books = await convex.query('books:getUserBooks');
+    displayBooks(books || []);
+  } catch (error) {
+    console.error('Erro ao carregar livros:', error);
+    showAlert('Erro ao carregar livros', 'danger');
+  }
 }
 
 function displayBooks(books) {
@@ -217,31 +248,36 @@ function displayBooks(books) {
 }
 
 function deleteBook(bookId) {
-  if (!isLoggedIn()) return;
+  if (!isLoggedIn() || !convex) return;
   
   if (!confirm('Tem certeza que deseja deletar este livro?')) return;
   
-  const books = JSON.parse(localStorage.getItem('books') || '{}');
-  const userBooks = books[currentUser.email] || [];
-  
-  books[currentUser.email] = userBooks.filter(b => b.id !== bookId);
-  localStorage.setItem('books', JSON.stringify(books));
-  
-  showAlert('✅ Livro deletado', 'success');
-  loadBooks();
+  convex.mutation('books:deleteBook', { bookId })
+    .then(() => {
+      showAlert('✅ Livro deletado', 'success');
+      loadBooks();
+    })
+    .catch(error => {
+      console.error('Erro ao deletar livro:', error);
+      showAlert('Erro ao deletar livro', 'danger');
+    });
 }
 
-function openBook(bookId) {
-  if (!isLoggedIn()) return;
+async function openBook(bookId) {
+  if (!isLoggedIn() || !convex) return;
   
-  const books = JSON.parse(localStorage.getItem('books') || '{}');
-  const userBooks = books[currentUser.email] || [];
-  const book = userBooks.find(b => b.id === bookId);
-  
-  if (book) {
-    localStorage.setItem('currentBook', JSON.stringify(book));
-    showScreen('reader');
-    loadPdfReader(book);
+  try {
+    // Buscar livro específico
+    const book = await convex.query('books:getBook', { bookId });
+    
+    if (book) {
+      sessionStorage.setItem('currentBook', JSON.stringify(book));
+      showScreen('reader');
+      loadPdfReader(book);
+    }
+  } catch (error) {
+    console.error('Erro ao abrir livro:', error);
+    showAlert('Erro ao abrir livro', 'danger');
   }
 }
 
@@ -268,9 +304,9 @@ function loadPdfReader(book) {
   }
 }
 
-// ========== PERFIL E CONFIGURAÇÕES ==========
-function saveProfile() {
-  if (!isLoggedIn()) return;
+// ========== PERFIL ==========
+async function saveProfile() {
+  if (!isLoggedIn() || !convex) return;
   
   const newName = document.getElementById('profileName').value.trim();
   
@@ -279,13 +315,30 @@ function saveProfile() {
     return;
   }
   
-  const users = JSON.parse(localStorage.getItem('users') || '{}');
-  users[currentUser.email].name = newName;
-  localStorage.setItem('users', JSON.stringify(users));
-  currentUser.name = newName;
+  try {
+    const updated = await convex.mutation('users:updateProfile', {
+      name: newName
+    });
+    
+    if (updated) {
+      currentUser.name = newName;
+      sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+      showAlert('✅ Perfil atualizado!', 'success');
+      updateNavigation();
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar perfil:', error);
+    showAlert('Erro ao atualizar perfil', 'danger');
+  }
+}
+
+function showProfile() {
+  if (!isLoggedIn()) return;
   
-  showAlert('✅ Perfil atualizado!', 'success');
-  updateNavigation();
+  document.getElementById('profileName').value = currentUser.name;
+  document.getElementById('profileEmail').value = currentUser.email;
+  
+  showScreen('profile');
 }
 
 // ========== UI HELPERS ==========
@@ -328,7 +381,6 @@ function updateNavigation() {
   if (isLoggedIn()) {
     navButtons.innerHTML = `
       <button class="btn btn-outline-secondary btn-sm" onclick="showProfile()">👤 ${currentUser.name}</button>
-      <button class="btn btn-outline-info btn-sm" onclick="showScreen('settings')">⚙️ Config</button>
       <button class="btn btn-outline-danger btn-sm" onclick="logoutUser()">🚪 Sair</button>
     `;
   } else {
@@ -361,14 +413,14 @@ function changeFontSize(size) {
 }
 
 // ========== INICIALIZAÇÃO ==========
-document.addEventListener('DOMContentLoaded', function() {
-  // Inicializar Convex
-  initConvex();
-  
-  // Restaurar tema salvo
+document.addEventListener('DOMContentLoaded', async function() {
+  // Restaurar tema
   if (localStorage.getItem('theme') === 'dark') {
     document.body.classList.add('dark-mode');
   }
+  
+  // Inicializar Convex
+  await initConvex();
   
   // Configurar formulários
   const loginForm = document.getElementById('loginForm');
@@ -403,8 +455,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Convex é configurado via variáveis de ambiente, não via frontend
-  
   // Determinar tela inicial
   if (isLoggedIn()) {
     showScreen('home');
@@ -429,28 +479,21 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function filterBooks() {
-  if (!isLoggedIn()) return;
-  
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   const genreFilter = document.getElementById('genreFilter').value;
   
-  const books = JSON.parse(localStorage.getItem('books') || '{}');
-  const userBooks = books[currentUser.email] || [];
-  
-  let filtered = userBooks;
-  
-  if (searchTerm) {
-    filtered = filtered.filter(b =>
-      b.title.toLowerCase().includes(searchTerm) ||
-      b.author.toLowerCase().includes(searchTerm)
-    );
-  }
-  
-  if (genreFilter) {
-    filtered = filtered.filter(b => b.genre === genreFilter);
-  }
-  
-  displayBooks(filtered);
+  // Filtrar cards já exibidos
+  const cards = document.querySelectorAll('#booksGrid .card');
+  cards.forEach(card => {
+    const title = card.querySelector('.card-title').textContent.toLowerCase();
+    const author = card.querySelector('.card-text').textContent.toLowerCase();
+    const genre = card.querySelector('.badge').textContent;
+    
+    const matchesSearch = title.includes(searchTerm) || author.includes(searchTerm);
+    const matchesGenre = !genreFilter || genre === genreFilter;
+    
+    card.parentElement.style.display = (matchesSearch && matchesGenre) ? '' : 'none';
+  });
 }
 
 function goBackFromReader() {

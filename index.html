@@ -240,40 +240,6 @@
                     </div>
                 </div>
             </div>
-
-            <div id="settingsScreen" class="screen">
-                <div class="card shadow-sm">
-                    <div class="card-body p-4">
-                        <h1 class="card-title mb-4">Configurações</h1>
-                        
-                        <div class="mb-4">
-                            <h5>🔗 Integração Convex - Backend</h5>
-                            <p class="text-muted small">O Convex é configurado <strong>no backend via variáveis de ambiente</strong>, não aqui.</p>
-                            
-                            <div class="alert alert-info mt-3">
-                                <strong>Para configurar o Convex:</strong><br>
-                                <ol class="small mt-2">
-                                    <li>Copie seu arquivo <code>.env</code> da raiz do projeto</li>
-                                    <li>Substitua <code>VITE_CONVEX_URL=https://seu-projeto-aqui.convex.cloud</code></li>
-                                    <li>Use sua URL real do <a href="https://dashboard.convex.dev" target="_blank">Convex Dashboard</a></li>
-                                    <li>Redeploy a aplicação</li>
-                                </ol>
-                            </div>
-                            
-                            <div class="alert alert-success" id="convexStatus" style="display: none;">
-                                ✅ <small id="convexStatusText"></small>
-                            </div>
-                        </div>
-
-                        <hr>
-
-                        <div>
-                            <h5>Outras Opções</h5>
-                            <button class="btn btn-secondary" onclick="showScreen('home')">Voltar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </main>
 
@@ -283,6 +249,9 @@
 
     <!-- Convex Client Library -->
     <script src="https://cdn.jsdelivr.net/npm/convex@latest/dist/browser.js"></script>
+
+    <!-- Convex Configuration (URL from environment) -->
+    <script src="convex.config.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="script.js"></script>
