@@ -1,15 +1,8 @@
-# Netlify Build Configuration para Site Estático HTML/CSS/JS
+# Netlify Build Configuration para Site Estático
 
 [build]
-  # Nenhum build necessário - site estático puro
   command = ""
-  # Diretório a publicar (raiz do projeto)
   publish = "."
-
-# DESABILITAR plugin Next.js automático
-[[plugins]]
-package = "@netlify/plugin-nextjs"
-disabled = true
 
 # Reescrever URLs para SPA (Single Page Application)
 [[redirects]]
@@ -17,26 +10,18 @@ disabled = true
   to = "/"
   status = 200
 
-# Headers customizados
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
-
-# Cache de arquivos estáticos
-[[headers]]
-  for = "/style.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
-[[headers]]
-  for = "/script.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
+# Cache control headers
 [[headers]]
   for = "/index.html"
   [headers.values]
     Cache-Control = "no-cache"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
