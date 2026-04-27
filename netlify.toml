@@ -3,12 +3,13 @@
 [build]
   # Nenhum build necessário - site estático puro
   command = ""
-  # Diretório a publicar
+  # Diretório a publicar (raiz do projeto)
   publish = "."
 
-[build.environment]
-  # Desabilitar o plugin Next.js automático
-  NEXT_SKIP_EXPORT = "true"
+# DESABILITAR plugin Next.js automático
+[[plugins]]
+package = "@netlify/plugin-nextjs"
+disabled = true
 
 # Reescrever URLs para SPA (Single Page Application)
 [[redirects]]
