@@ -8,12 +8,19 @@ let currentUser = null;
 
 // ========== INICIALIZAÇÃO CONVEX ==========
 function initConvex() {
-  const savedUrl = localStorage.getItem('convexUrl');
-  const urlToUse = savedUrl || 'https://seu-projeto.convex.cloud';
+  // URL do Convex deve estar definida via variável de ambiente VITE_CONVEX_URL
+  const convexUrl = import.meta.env.VITE_CONVEX_URL || window.__CONVEX_URL__;
+  
+  if (!convexUrl) {
+    console.warn('⚠️ Convex URL não configurada. Configure VITE_CONVEX_URL nas variáveis de ambiente');
+    return;
+  }
   
   if (typeof ConvexHttpClient !== 'undefined') {
-    convex = new ConvexHttpClient(urlToUse);
-    console.log('✅ Convex inicializado');
+    convex = new ConvexHttpClient(convexUrl);
+    console.log('✅ Convex inicializado com:', convexUrl);
+  } else {
+    console.warn('⚠️ ConvexHttpClient não disponível');
   }
 }
 
@@ -281,24 +288,6 @@ function saveProfile() {
   updateNavigation();
 }
 
-function saveConvexUrl() {
-  const url = document.getElementById('convexUrl').value.trim();
-  
-  if (!url) {
-    showAlert('Por favor, digite a URL', 'warning');
-    return;
-  }
-  
-  if (!url.includes('convex.cloud')) {
-    showAlert('URL inválida. Deve conter "convex.cloud"', 'danger');
-    return;
-  }
-  
-  localStorage.setItem('convexUrl', url);
-  initConvex();
-  showAlert('✅ URL do Convex configurada!', 'success');
-}
-
 // ========== UI HELPERS ==========
 function showAlert(message, type = 'info') {
   // Criar elemento de alerta
@@ -414,17 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  const convexConfigForm = document.getElementById('convexConfigForm');
-  if (convexConfigForm) {
-    const savedUrl = localStorage.getItem('convexUrl');
-    if (savedUrl) {
-      document.getElementById('convexUrl').value = savedUrl;
-    }
-    convexConfigForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      saveConvexUrl();
-    });
-  }
+  // Convex é configurado via variáveis de ambiente, não via frontend
   
   // Determinar tela inicial
   if (isLoggedIn()) {

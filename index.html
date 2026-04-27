@@ -247,26 +247,22 @@
                         <h1 class="card-title mb-4">Configurações</h1>
                         
                         <div class="mb-4">
-                            <h5>Integração Convex - Banco de Dados</h5>
-                            <p class="text-muted small">Configure a URL do seu projeto Convex para sincronizar dados com o servidor.</p>
+                            <h5>🔗 Integração Convex - Backend</h5>
+                            <p class="text-muted small">O Convex é configurado <strong>no backend via variáveis de ambiente</strong>, não aqui.</p>
                             
-                            <form id="convexConfigForm">
-                                <div class="mb-3">
-                                    <label for="convexUrl" class="form-label">URL do Projeto Convex</label>
-                                    <input type="url" class="form-control" id="convexUrl" placeholder="https://seu-projeto.convex.cloud" required>
-                                    <small class="form-text text-muted d-block mt-2">
-                                        Como obter:<br>
-                                        1. Acesse <a href="https://dashboard.convex.dev" target="_blank">dashboard.convex.dev</a><br>
-                                        2. Selecione seu projeto "sebo-literario"<br>
-                                        3. Copie a URL de Deployment (https://seu-projeto.convex.cloud)<br>
-                                        4. Cole aqui e clique em Salvar
-                                    </small>
-                                </div>
-                                <div id="convexStatus" class="alert alert-info mb-3" style="display: none;">
-                                    <small id="convexStatusText"></small>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Salvar URL do Convex</button>
-                            </form>
+                            <div class="alert alert-info mt-3">
+                                <strong>Para configurar o Convex:</strong><br>
+                                <ol class="small mt-2">
+                                    <li>Copie seu arquivo <code>.env</code> da raiz do projeto</li>
+                                    <li>Substitua <code>VITE_CONVEX_URL=https://seu-projeto-aqui.convex.cloud</code></li>
+                                    <li>Use sua URL real do <a href="https://dashboard.convex.dev" target="_blank">Convex Dashboard</a></li>
+                                    <li>Redeploy a aplicação</li>
+                                </ol>
+                            </div>
+                            
+                            <div class="alert alert-success" id="convexStatus" style="display: none;">
+                                ✅ <small id="convexStatusText"></small>
+                            </div>
                         </div>
 
                         <hr>
