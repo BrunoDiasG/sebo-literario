@@ -1,8 +1,4 @@
-// Configuração do Convex - Injetado pelo build/deployment
-// Esta URL vem da variável de ambiente VITE_CONVEX_URL
+// Configuração do Convex - URL de Produção
+// Atualized: 2026-04-27
 
-// No Netlify, você pode:
-// 1. Configurar a variável VITE_CONVEX_URL nas Environment Variables
-// 2. Ou substituir este arquivo durante o build
-
-window.__CONVEX_URL__ = 'https://joyous-bee-470.convex.cloud';
+window.__CONVEX_URL__ = 'https://marvelous-lynx-590.convex.cloud';
